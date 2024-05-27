@@ -12,7 +12,7 @@ const root = (process.argv.slice(2).join('') + '/').replace(
 	'/',
 )
 
-console.log('About to crawl', root, '\n')
+console.log('\nAbout to crawl', root, '\n')
 
 // creates and writes files to a zip file
 
