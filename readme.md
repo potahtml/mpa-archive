@@ -12,15 +12,20 @@ Generator.
 
 `mpa-archive http://urlhere`
 
-This will start crawling `http://urlhere` with `cpu/2` threads.
-Progress will be displayed in the console. Besides crawling on site
-links, it will also intercept request and save that too. Once done it
-will display a small report and create a zip file on `cwd` named
-`crawl.zip`.
+Will create and save the crawled site in `crawl.zip` on `cwd`
+
+- Crawls `http://urlhere` with `cpu/2` threads
+- Progress is displayed in the console
+- Crawls on site links only
+- Intercepts on site requests and saves that too
+- Generates `sitemap.txt` and `sitemap.xml`
+
+Once done, it will display a small report and create a zip file named
+`crawl.zip` on `cwd`
 
 ## Serving
 
 `mpa-server`
 
-This will serve the files from the zip file on `127.0.0.1` with a port
-seeded to the `cwd`
+Will serve the files from the zip located in the current directory.
+Host is `127.0.0.1` with a port seeded to `cwd`
