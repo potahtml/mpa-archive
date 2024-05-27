@@ -1,0 +1,48 @@
+{
+  "type": "module",
+  "name": "mpa-archive",
+  "version": "1.0.0",
+  "description": "Crawls a Multi-Page Application to a zip file, serve the Multi-Page Application from the zip file. A MPA archiver. Could be used as a Site Generator",
+  "bin": {
+    "mpa-archive": "./src/index.js",
+    "mpa-server": "./src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/potahtml/mpa-archive.git"
+  },
+  "keywords": [
+    "crawl",
+    "crawler",
+    "archiver",
+    "site crawler",
+    "site archiver",
+    "mpa crawler",
+    "site generator",
+    "ssg",
+    "webserver"
+  ],
+  "author": "Tito Bouzout",
+  "license": "GPL",
+  "homepage": "https://github.com/potahtml/mpa-archive",
+  "dependencies": {
+    "adm-zip": "^0.5.12",
+    "mime-types": "^2.1.35",
+    "puppeteer": "^22.10.0"
+  },
+  "prettier": {
+    "printWidth": 70,
+    "useTabs": true,
+    "semi": false,
+    "singleQuote": true,
+    "quoteProps": "as-needed",
+    "jsxSingleQuote": false,
+    "trailingComma": "all",
+    "bracketSpacing": true,
+    "bracketSameLine": false,
+    "arrowParens": "avoid",
+    "proseWrap": "never",
+    "endOfLine": "lf",
+    "singleAttributePerLine": true
+  }
+}
