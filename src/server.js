@@ -57,7 +57,6 @@ http
 		let found = false
 		function find(file) {
 			zipEntries.forEach(function (zipEntry) {
-				// console.log(zipEntry.entryName)
 				if (zipEntry.entryName == file) {
 					found = true
 					serve(file, zipEntry.getData())
@@ -69,7 +68,7 @@ http
 
 		if (!found) {
 			// try with /index.html
-			find(file + '/index.html')
+			find(file.replace(/\/+$/, '') + '/index.html')
 
 			if (!found) {
 				console.log('❌', file)
