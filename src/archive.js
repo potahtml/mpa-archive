@@ -139,7 +139,7 @@ function crawl() {
 			const page = browser.page
 
 			page
-				.goto(url)
+				.goto(url, { waitUntil: 'networkidle0' })
 				.then(() => {
 					setTimeout(async () => {
 						total++
