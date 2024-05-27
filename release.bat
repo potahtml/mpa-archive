@@ -1,8 +1,8 @@
-npm version patch --git-tag-version false
+call npm version patch --git-tag-version false
 
-git add --all
-git commit -m "update"
+call git add --all
+call git commit -m "update"
 
-git push --all --prune
+call git push --all --prune
 
-npm publish
+call npm publish
