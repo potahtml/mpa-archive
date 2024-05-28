@@ -18,16 +18,17 @@ console.log('\nAbout to crawl', root, '\n')
 
 const archive = new AdmZip()
 
-process.on('exit', async () => {
-	archive.writeZip('crawl.zip')
-})
-
 const writeFile = (file, content, binary) => {
+	content = binary
+		? Buffer.from(content, 'binary')
+		: Buffer.from(content, 'utf8')
+
+	if (/(js|css|txt|html|webmanifest|manifest|\/)$/.test(file)) {
+		content = content.toString().replaceAll(root, '/')
+	}
 	archive.addFile(
 		decodeURIComponent(file).replace(/^\//, ''),
-		binary
-			? Buffer.from(content, 'binary')
-			: Buffer.from(content, 'utf8'),
+		content,
 	)
 }
 
@@ -43,7 +44,7 @@ deleteZip()
 let total = 0
 
 const time = Date.now()
-const wait = 250
+const wait = 1500
 
 // saves crawled page
 
@@ -58,14 +59,7 @@ function onPageLoad(url, content) {
 // creates sitemap
 
 function onDone(urls) {
-	// sitemap.txt
-
-	writeFile(
-		'sitemap.txt',
-		urls.map(url => root + '' + url).join('\n'),
-	)
-
-	// sitemap.xml
+	writeFile('sitemap.txt', urls.map(url => root + url).join('\n'))
 
 	writeFile(
 		'sitemap.xml',
@@ -73,11 +67,16 @@ function onDone(urls) {
 		<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 		  ${urls.map(
 				url => `<url>
-		    <loc>${root + '' + url}</loc>
+		    <loc>${root + url}</loc>
 		  </url>
 		  `,
 			)}
 		</urlset>`,
+	)
+
+	writeFile(
+		'urls.txt',
+		done.filter(url => url.startsWith(root)).join('\n'),
 	)
 }
 
@@ -92,39 +91,104 @@ function diff(o, t) {
 
 // browser instances
 
+const numInstances = os.cpus().length / 2
+
 const chrome = await puppeteer.launch()
+
 const browsers = []
-for (let i = 0; i < os.cpus().length / 2; i++) {
+for (let i = 0; i < numInstances; i++) {
 	const page = await chrome.newPage()
+
 	await page.setViewport({ width: 1920, height: 1080 })
 	browsers.push({ page, status: 'idle' })
+
+	// await page.setCacheEnabled(false)
+	await page.setBypassServiceWorker(true)
 	await page.setRequestInterception(true)
-	page.on('request', request => {
-		request.continue()
+	await interceptAllTrafficForPageUsingFetch(page.target())
+
+	page.on('request', async request => {
+		await request.continue()
 	})
 	page.on('requestfinished', async request => {
 		const url = request.url()
 		const response = request.response()
 
-		let body
-		if (request.redirectChain().length === 0) {
-			// body can only be access for non-redirect responses
-			body = await response.buffer().catch(() => {})
-		}
+		const body = await response.buffer().catch(() => {})
 
-		if (url.startsWith(root) && !done.includes(url) && body) {
-			total++
-			console.log('✔ ', url.replace(root, ''))
-
-			done.push(url)
-			writeFile(url.replace(root, ''), body, true)
-		}
+		saveRequest(url, body)
 	})
+}
+
+chrome.on('targetcreated', async target => {
+	await interceptAllTrafficForPageUsingFetch(target)
+})
+chrome.on('targetchanged', async target => {
+	await interceptAllTrafficForPageUsingFetch(target)
+})
+
+async function interceptAllTrafficForPageUsingFetch(target) {
+	const client = await target.createCDPSession()
+	await client.send('Network.enable')
+	await client.send('Network.setBypassServiceWorker', {
+		bypass: true,
+	})
+
+	await client
+		.send('Fetch.enable', {
+			patterns: [
+				{
+					urlPattern: '*',
+					requestStage: 'Response',
+				},
+			],
+		})
+		.catch(() => {})
+
+	await client.on('Network.requestWillBeSent', async event => {
+		await fetchURL(event.request.url)
+	})
+
+	await client.on(
+		'Fetch.requestPaused',
+		async ({ requestId, request }) => {
+			const { url } = request
+			await fetchURL(url)
+			await client.send('Fetch.continueRequest', {
+				requestId,
+			})
+		},
+	)
+}
+
+function saveRequest(url, body) {
+	if (url.startsWith(root) && !done.includes(url) && body) {
+		total++
+		console.log('✔ ', url.replace(root, ''))
+
+		done.push(url)
+		writeFile(url.replace(root, ''), body, true)
+	} else {
+		if (url.startsWith(root) && !done.includes(url)) {
+			console.log('🤿', url.replace(root, ''))
+		}
+	}
+}
+
+async function fetchURL(url) {
+	if (url.startsWith(root) && !done.includes(url)) {
+		saveRequest(
+			url,
+			await fetch(url).then(response => response.arrayBuffer()),
+		)
+	}
 }
 
 // 🕷
 
-function crawl() {
+let shutdown = false
+
+async function crawl() {
 	const browser = browsers.find(browser => browser.status === 'idle')
 	if (browser) {
 		const url = diff(urls, done)[0]
@@ -139,10 +203,14 @@ function crawl() {
 			const page = browser.page
 
 			page
-				.goto(url, { waitUntil: 'networkidle0' })
+				.goto(url, { waitUntil: 'networkidle2' })
 				.then(() => {
 					setTimeout(async () => {
 						total++
+
+						await page.bringToFront()
+						await page.waitForLoadState()
+						await page.focus('body')
 
 						const hrefs = await page.$$eval('a', as =>
 							as.map(a => a.href),
@@ -152,49 +220,69 @@ function crawl() {
 							() => document.documentElement.outerHTML,
 						)
 
-						browser.status = 'idle'
+						const fetches = chrome
+							.targets()
+							.map(target => target.url())
+							.map(url => fetchURL(url))
+
+						await Promise.all(fetches)
 
 						for (let href of hrefs) {
 							href = href.replace(/#.*/, '').replace(/\?.*/, '')
 
 							if (href.startsWith(root) && !done.includes(href)) {
 								urls.push(href)
-								crawl()
 							}
 						}
 
-						onPageLoad(shortURL, html.replaceAll('"' + root, '"/'))
+						onPageLoad(shortURL, html)
+
+						browser.status = 'idle'
 
 						console.log('✔ ', shortURL)
 
-						crawl()
+						for (let i = 0; i < numInstances; i++) {
+							crawl()
+						}
 					}, wait)
 				})
-				.catch(() => {
+				.catch(e => {
 					console.error('\nCrawl failed, is', url, 'up and running?')
+					console.error(e)
 					deleteZip()
 					process.exit()
 				})
 		} else {
 			if (!browsers.find(browser => browser.status === 'busy')) {
-				chrome.close()
+				setTimeout(async () => {
+					if (!shutdown) {
+						shutdown = true
+						await chrome.close()
 
-				onDone(
-					Array.from(new Set(urls.map(url => url.replace(root, '')))),
-				)
+						onDone(
+							Array.from(
+								new Set(urls.map(url => url.replace(root, ''))),
+							),
+						)
 
-				console.log(
-					'\nCrawled',
-					total,
-					'pages from',
-					root,
-					'in',
-					((Date.now() - time) / 1000) | 0,
-					'seconds into `crawl.zip`',
-				)
-				console.log(
-					'\nRun `mpa-server` to serve the crawled pages from the zip',
-				)
+						archive.writeZip('crawl.zip')
+
+						console.log(
+							'\nCrawled',
+							total,
+							'pages from',
+							root,
+							'in',
+							((Date.now() - time) / 1000) | 0,
+							'seconds into `crawl.zip`',
+						)
+						console.log(
+							'\nRun `mpa-server` to serve the crawled pages from the zip',
+						)
+
+						import('./server.js')
+					}
+				}, 5000)
 			}
 		}
 	}

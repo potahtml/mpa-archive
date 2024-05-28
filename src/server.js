@@ -34,7 +34,7 @@ function _decodeURIComponent(a) {
 	}
 }
 
-const zip = new AdmZip('crawl.zip')
+const zip = new AdmZip(process.cwd() + '/crawl.zip')
 const zipEntries = zip.getEntries()
 
 const port = seeded_random(1025, 65534, path.resolve('.'))
