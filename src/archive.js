@@ -23,14 +23,11 @@ const writeFile = (file, content, binary) => {
 		? Buffer.from(content, 'binary')
 		: Buffer.from(content, 'utf8')
 
-	if (/(js|css|txt|html|webmanifest|manifest|\/)$/.test(file)) {
+	if (/(js|css|html|webmanifest|manifest|\/)$/.test(file)) {
 		content = content.toString().replaceAll(root, '/')
 	}
 	archive.addFile(
-		decodeURIComponent(file)
-			.replace(/^\//, '')
-			.replace(/#.*/, '')
-			.replace(/\?.*/, ''),
+		decodeURIComponent(cleanURL(file).replace(/^\//, '')),
 		content,
 	)
 }
@@ -62,7 +59,10 @@ function onPageLoad(url, content) {
 // creates sitemap
 
 function onDone(urls) {
-	writeFile('sitemap.txt', urls.map(url => root + url).join('\n'))
+	writeFile(
+		'sitemap.txt',
+		unique(urls.map(url => cleanURL(root + url))).join('\n'),
+	)
 
 	writeFile(
 		'sitemap.xml',
@@ -70,7 +70,7 @@ function onDone(urls) {
 		<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 		  ${urls.map(
 				url => `<url>
-		    <loc>${root + url}</loc>
+		    <loc>${cleanURL(root + url)}</loc>
 		  </url>
 		  `,
 			)}
@@ -79,9 +79,19 @@ function onDone(urls) {
 
 	writeFile(
 		'urls.txt',
-		done.filter(url => url.startsWith(root)).join('\n'),
+		unique(
+			done
+				.filter(url => url.startsWith(root))
+				.map(url => cleanURL(url)),
+		).join('\n'),
 	)
 }
+
+const cleanURL = url => url.replace(/#.*/, '').replace(/\?.*/, '')
+
+const unique = arr => Array.from(new Set(arr))
+
+const noop = () => {}
 
 // state
 
@@ -111,13 +121,13 @@ for (let i = 0; i < numInstances; i++) {
 	await interceptAllTrafficForPageUsingFetch(page.target())
 
 	page.on('request', async request => {
-		await request.continue().catch(() => {})
+		await request.continue().catch(noop)
 	})
 	page.on('requestfinished', async request => {
 		const url = request.url()
 		const response = request.response()
 
-		const body = await response.buffer().catch(() => {})
+		const body = await response.buffer().catch(noop)
 
 		saveRequest(url, body)
 	})
@@ -132,10 +142,12 @@ chrome.on('targetchanged', async target => {
 
 async function interceptAllTrafficForPageUsingFetch(target) {
 	const client = await target.createCDPSession()
-	await client.send('Network.enable')
-	await client.send('Network.setBypassServiceWorker', {
-		bypass: true,
-	})
+	await client.send('Network.enable').catch(noop)
+	await client
+		.send('Network.setBypassServiceWorker', {
+			bypass: true,
+		})
+		.catch(noop)
 
 	await client
 		.send('Fetch.enable', {
@@ -146,7 +158,7 @@ async function interceptAllTrafficForPageUsingFetch(target) {
 				},
 			],
 		})
-		.catch(() => {})
+		.catch(noop)
 
 	await client.on('Network.requestWillBeSent', async event => {
 		await fetchURL(event.request.url)
@@ -161,7 +173,7 @@ async function interceptAllTrafficForPageUsingFetch(target) {
 				.send('Fetch.continueRequest', {
 					requestId,
 				})
-				.catch(() => {})
+				.catch(noop)
 		},
 	)
 }
@@ -169,7 +181,7 @@ async function interceptAllTrafficForPageUsingFetch(target) {
 function saveRequest(url, body) {
 	if (url.startsWith(root) && !done.includes(url) && body) {
 		total++
-		console.log('✔ ', url.replace(root, ''))
+		console.log('✔ ', cleanURL(url.replace(root, '')))
 
 		done.push(url)
 		writeFile(url.replace(root, ''), body, true)
@@ -198,7 +210,9 @@ async function crawl() {
 	if (browser) {
 		const url = diff(urls, done)[0]
 		if (url) {
-			const shortURL = url.replace(root, '')
+			const shortURL = decodeURIComponent(
+				cleanURL(url.replace(root, '')),
+			)
 
 			console.log('🕷 ', shortURL)
 
@@ -238,13 +252,14 @@ async function crawl() {
 						await Promise.all(fetches)
 
 						for (let href of hrefs) {
-							href = href.replace(/#.*/, '').replace(/\?.*/, '')
+							href = cleanURL(href)
 							if (href.startsWith(root) && !done.includes(href)) {
 								urls.push(href)
 							}
 						}
 
 						for (let href of src) {
+							href = href.replace(/#.*/, '')
 							if (href.startsWith(root) && !done.includes(href)) {
 								urls.push(href)
 							}
@@ -272,7 +287,7 @@ async function crawl() {
 				setTimeout(async () => {
 					if (!shutdown) {
 						shutdown = true
-						await chrome.close().catch(() => {})
+						await chrome.close().catch(noop)
 
 						onDone(
 							Array.from(
