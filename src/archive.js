@@ -111,7 +111,7 @@ for (let i = 0; i < numInstances; i++) {
 	await interceptAllTrafficForPageUsingFetch(page.target())
 
 	page.on('request', async request => {
-		await request.continue()
+		await request.continue().catch(() => {})
 	})
 	page.on('requestfinished', async request => {
 		const url = request.url()
@@ -157,9 +157,11 @@ async function interceptAllTrafficForPageUsingFetch(target) {
 		async ({ requestId, request }) => {
 			const { url } = request
 			await fetchURL(url)
-			await client.send('Fetch.continueRequest', {
-				requestId,
-			})
+			await client
+				.send('Fetch.continueRequest', {
+					requestId,
+				})
+				.catch(() => {})
 		},
 	)
 }
@@ -270,7 +272,7 @@ async function crawl() {
 				setTimeout(async () => {
 					if (!shutdown) {
 						shutdown = true
-						await chrome.close()
+						await chrome.close().catch(() => {})
 
 						onDone(
 							Array.from(
