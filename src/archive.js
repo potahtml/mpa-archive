@@ -243,7 +243,6 @@ async function crawl() {
 						}
 
 						for (let href of src) {
-							href = href.replace(/#.*/, '').replace(/\?.*/, '')
 							if (href.startsWith(root) && !done.includes(href)) {
 								urls.push(href)
 							}
