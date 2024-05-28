@@ -87,9 +87,10 @@ function onDone(urls) {
 	)
 }
 
-const cleanURL = url => url.replace(/#.*/, '').replace(/\?.*/, '')
+const cleanURL = url =>
+	String(url).replace(/#.*/, '').replace(/\?.*/, '')
 
-const unique = arr => Array.from(new Set(arr))
+const unique = arr => Array.from(new Set(arr)).sort()
 
 const noop = () => {}
 
@@ -229,7 +230,7 @@ async function crawl() {
 
 						await page.bringToFront()
 
-						await page.focus('body')
+						await page.focus('body').catch(noop)
 
 						const hrefs = await page.$$eval('[href]', as =>
 							as.map(a => a.href),
