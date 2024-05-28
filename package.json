@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "mpa-archive",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Crawls a Multi-Page Application to a zip file, serve the Multi-Page Application from the zip file. A MPA archiver. Could be used as a Site Generator",
   "bin": {
     "mpa-archive": "./src/archive.js",

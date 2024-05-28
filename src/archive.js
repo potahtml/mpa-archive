@@ -27,7 +27,10 @@ const writeFile = (file, content, binary) => {
 		content = content.toString().replaceAll(root, '/')
 	}
 	archive.addFile(
-		decodeURIComponent(file).replace(/^\//, ''),
+		decodeURIComponent(file)
+			.replace(/^\//, '')
+			.replace(/#.*/, '')
+			.replace(/\?.*/, ''),
 		content,
 	)
 }
@@ -203,18 +206,23 @@ async function crawl() {
 			const page = browser.page
 
 			page
-				.goto(url, { waitUntil: 'networkidle2' })
+				.goto(url, { waitUntil: 'networkidle0' })
 				.then(() => {
 					setTimeout(async () => {
 						total++
 
 						await page.bringToFront()
-						await page.waitForLoadState()
+
 						await page.focus('body')
 
-						const hrefs = await page.$$eval('a', as =>
+						const hrefs = await page.$$eval('[href]', as =>
 							as.map(a => a.href),
 						)
+
+						const src = await page.$$eval('[src]', as =>
+							as.map(a => a.src),
+						)
+
 						// const title = await page.evaluate(() => document.title)
 						const html = await page.evaluate(
 							() => document.documentElement.outerHTML,
@@ -229,7 +237,13 @@ async function crawl() {
 
 						for (let href of hrefs) {
 							href = href.replace(/#.*/, '').replace(/\?.*/, '')
+							if (href.startsWith(root) && !done.includes(href)) {
+								urls.push(href)
+							}
+						}
 
+						for (let href of src) {
+							href = href.replace(/#.*/, '').replace(/\?.*/, '')
 							if (href.startsWith(root) && !done.includes(href)) {
 								urls.push(href)
 							}
