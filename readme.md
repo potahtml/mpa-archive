@@ -8,24 +8,42 @@ Generator.
 
 `npm install -g mpa-archive`
 
-## Crawling
+## Usage
 
-`mpa-archive http://urlhere`
+### Crawling
 
-Will create and save the crawled site in `crawl.zip` on `cwd`
+`mpa http://example.net`
 
-- Crawls `http://urlhere` with `cpu/2` threads
+Will crawl the url recursively and save it in `example.net.zip`. Once
+done, it will display a report and can serve the files from the zip.
+
+### Serving
+
+`mpa`
+
+Will create a server for each zip file on the current directory. Host
+is `localhost` with a `port` seeded to the zip file path.
+
+## Features
+
+- It uses headless puppeteer
+- Crawls `http://example.net` with `cpu count / 2` threads
 - Progress is displayed in the console
-- Crawls on site links only
-- Intercepts on site requests and saves that too
-- Generates `sitemap.txt` and `sitemap.xml`
+- Fetches `sitemap.txt` and `sitemap.xml` as a seed point
+- Reports HTTP status codes different than 200, 304, 204, 206
+- Crawls on site urls only but will `fetch` external resources
+- Intercepts site resources and saves that too
+- Generates `mpa/sitemap.txt` and `mpa/sitemap.xml`
+- Saves site sourcemaps
+- Can resume if process exit, save checkpoint every 250 urls
 
-Once done, it will display a small report and create a zip file named
-`crawl.zip` on `cwd`
+### to consider
 
-## Serving
-
-`mpa-server`
-
-Will serve the files from the zip located in the current directory.
-Host is `127.0.0.1` with a port seeded to `cwd`
+- save it in an incremental compression format, that doesnt require
+  re-compressing the whole file when it changes, maybe already does
+  that?
+- urls to externals resources are not re-written to be local
+  resources, if this is done then stuff loaded from the root will
+  break
+- it should crawl the site by clicking the links instead of opening a
+  full tab
