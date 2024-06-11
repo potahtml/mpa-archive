@@ -15,7 +15,17 @@ console.log()
 
 const cwd = process.cwd()
 
-const url = new URL(process.argv.slice(2).join('').trim())
+const args = process.argv.slice(2)
+const uri = args.shift()
+
+const options = {
+	originalHTML:
+		args.includes('--original-html') || args.includes('--spa'),
+	originalURLS:
+		args.includes('--original-urls') || args.includes('--spa'),
+}
+
+const url = new URL(uri)
 
 const root = url.href
 const hostname = url.hostname
@@ -209,12 +219,22 @@ function onFile(url, body, binary, overWrite) {
 	if (!urls.saved.includes(path) || overWrite) {
 		urls.saved.push(path)
 
+		// do not save the browser generated html
+		if (options.originalHTML && overWrite) {
+			return
+		}
+
 		if (
-			!binary ||
-			(!(body instanceof ArrayBuffer) &&
-				/(js|jsx|css|html|webmanifest|manifest|html|map)$/.test(path))
+			!options.originalURLS &&
+			(!binary ||
+				(!(body instanceof ArrayBuffer) &&
+					/(js|jsx|css|html|webmanifest|manifest|html|map)$/.test(
+						path,
+					)))
 		) {
+			// make absolute links relative
 			body = body.toString().replaceAll(origin, '')
+		}
 
 		// get urls of assets from css
 		if (path.includes('.css')) {
