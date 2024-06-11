@@ -232,6 +232,15 @@ function onFile(url, body, binary, overWrite) {
 			}
 		}
 
+		// save source maps for internal files
+		if (
+			url.startsWith(origin) &&
+			/\.(js|jsx|css)/.test(path) &&
+			!path.includes('.map')
+		) {
+			urls.links.push(url.replace(/\.(jsx|js|css)/, '.$1.map'))
+		}
+
 		writeFile(path, body, binary)
 
 		console.log(overWrite ? '🧭' : '✔ ', shortURL(url))
