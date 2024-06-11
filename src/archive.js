@@ -216,9 +216,19 @@ function onFile(url, body, binary, overWrite) {
 		) {
 			body = body.toString().replaceAll(origin, '')
 
-			// save source maps for internal files
-			if (url.startsWith(origin) && /\.(js|jsx|css)/.test(path)) {
-				urls.links.push(url.replace(/\.(jsx|js|css)/, '.$1.map'))
+		// get urls of assets from css
+		if (path.includes('.css')) {
+			for (const match of body
+				.toString()
+				.matchAll(/url\("?([^\)]+)"?\)/g)) {
+				const src = match[1]
+				if (!src.startsWith('data:')) {
+					if (!src.startsWith('http:')) {
+						urls.links.push(new URL(src, origin).href)
+					} else {
+						urls.links.push(src)
+					}
+				}
 			}
 		}
 
