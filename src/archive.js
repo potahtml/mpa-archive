@@ -96,10 +96,13 @@ function save() {
 function writeFile(file, body, binary) {
 	body = typeof body === 'number' ? body.toString() : body
 
-	zip.addFile(
-		file,
-		binary ? Buffer.from(body, 'binary') : Buffer.from(body, 'utf8'),
-	)
+	if (body !== undefined)
+		zip.addFile(
+			file,
+			binary
+				? Buffer.from(body, 'binary')
+				: Buffer.from(body, 'utf8'),
+		)
 }
 
 // fetch sitemaps
