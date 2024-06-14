@@ -53,6 +53,10 @@ function serve(zipFile) {
 			res.setHeader('Content-Type', contentType(file))
 			res.setHeader('Pragma', 'public')
 			res.setHeader('Cache-Control', 'public, max-age=180')
+
+			res.setHeader('Cross-Origin-Opener-Policy', 'same-origin')
+			res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp')
+
 			res.writeHead(200)
 			res.end(Buffer.from(data))
 			console.log(
@@ -75,7 +79,6 @@ function serve(zipFile) {
 
 			if (entry) {
 				serve(file, path, entry.getData().slice(0))
-
 				return
 			}
 		}
