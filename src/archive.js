@@ -240,8 +240,11 @@ function onFile(url, body, binary, overWrite) {
 		if (path.includes('.css')) {
 			for (const match of body
 				.toString()
-				.matchAll(/url\("?([^\)]+)"?\)/g)) {
+				.matchAll(/url\(([^\)]+)\)/g)) {
 				const src = match[1]
+					.replace(/^('|")/, '')
+					.replace(/('|")$/, '')
+
 				if (!src.startsWith('data:')) {
 					if (!src.startsWith('http:')) {
 						urls.links.push(new URL(src, origin).href)
