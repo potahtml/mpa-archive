@@ -282,9 +282,18 @@ async function onCrawl(url, error) {
 	stats.running--
 
 	if (error) {
-		console.error('🛑 ', url)
+		console.error('🛑🍳 ', url)
 		console.error(error)
 		urls.errors.push(url)
+
+		// try again via fetch on crawl error
+		stats.running++
+
+		console.log('🔗', shortURL(url))
+		urls.pending.push(url)
+		stats.fetched++
+
+		fetchURL(url, true)
 	}
 
 	next()
@@ -330,16 +339,17 @@ function nextLink() {
 		})[0]
 }
 
-async function fetchURL(url) {
+async function fetchURL(url, overWrite) {
 	onFile(
 		url,
 		await fetch(url)
 			.then(response => response.arrayBuffer())
 			.catch(() => {
-				console.error('🛑 ', url)
+				console.error('🛑🔗 ', url)
 				urls.errors.push(url)
 			}),
 		true,
+		overWrite,
 	)
 
 	stats.running--
