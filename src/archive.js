@@ -220,6 +220,11 @@ function onFile(url, body, binary, overWrite) {
 
 	const path = getPathFromURL(url, origin)
 
+	if (body === undefined) {
+		console.error('🛑 `undefined` body', url)
+		return
+	}
+
 	if (!urls.saved.includes(path) || overWrite) {
 		urls.saved.push(path)
 
