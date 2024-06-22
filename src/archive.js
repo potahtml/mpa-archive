@@ -8,6 +8,7 @@ import { crawl, closeBrowser } from './lib/crawl.js'
 import { getPathFromURL, removeHash, shortURL } from './lib/url.js'
 
 import { escapeHTML, unescapeHTML } from './lib/html.js'
+import { blacklist } from './lib/blacklist.js'
 
 console.log()
 
@@ -300,7 +301,14 @@ function nextPage() {
 			.map(url => url.replace(/#.*/, ''))
 			.filter(url => !urls.done.includes(url))
 			.filter(url => !urls.errors.includes(url))
-			.filter(url => !urls.pending.includes(url))[0]
+			.filter(url => !urls.pending.includes(url))
+			.filter(url => {
+				try {
+					return !blacklist.includes(new URL(url).origin)
+				} catch (e) {
+					return false
+				}
+			})[0]
 	)
 }
 
@@ -312,7 +320,14 @@ function nextLink() {
 		.filter(url => !urls.done.includes(url))
 		.filter(url => !urls.errors.includes(url))
 		.filter(url => !urls.pending.includes(url))
-		.filter(url => !urls.queue.includes(url))[0]
+		.filter(url => !urls.queue.includes(url))
+		.filter(url => {
+			try {
+				return !blacklist.includes(new URL(url).origin)
+			} catch (e) {
+				return false
+			}
+		})[0]
 }
 
 async function fetchURL(url) {
