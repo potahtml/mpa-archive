@@ -31,7 +31,7 @@ function serve(zipFile) {
 
 	let entries = zip.getEntries()
 
-	const port = seededRandom(1025, 65534, zipFile)
+	const port = seededRandom(1025, 65534, domain)
 
 	const server = http.createServer(async function (req, res) {
 		const path = getRequestPathFromPath(req.url)
@@ -137,7 +137,7 @@ function serve(zipFile) {
 	})
 
 	server.on('error', () => {})
-	server.listen({ host: 'localhost', port })
+	server.listen({ host: '0.0.0.0', port })
 
 	console.log(`🖥  http://localhost:${port} for ${domain}\n`)
 }
