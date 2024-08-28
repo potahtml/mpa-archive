@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
-import os from 'node:os'
-import fs from 'node:fs'
 import AdmZip from 'adm-zip'
+import fs from 'node:fs'
+import os from 'node:os'
 
-import { crawl, closeBrowser } from './lib/crawl.js'
+import { closeBrowser, crawl } from './lib/crawl.js'
 import { getPathFromURL, removeHash, shortURL } from './lib/url.js'
 
-import { escapeHTML, unescapeHTML } from './lib/html.js'
 import { blacklist } from './lib/blacklist.js'
+import { escapeHTML, unescapeHTML } from './lib/html.js'
 
 console.log()
 
@@ -268,7 +268,8 @@ function onFile(url, body, binary, overWrite) {
 		if (
 			url.startsWith(origin) &&
 			/\.(js|jsx|css)/.test(path) &&
-			!path.includes('.map')
+			!path.includes('.map') &&
+			!path.includes('.json')
 		) {
 			urls.links.push(url.replace(/\.(jsx|js|css)/, '.$1.map'))
 		}
