@@ -168,7 +168,7 @@ export async function crawl(url, onFile, onCrawl, urls, origin) {
 				await focus(page)
 				await link.hover().catch(noop)
 				await link.focus().catch(noop)
-				await sleep(1000)
+				await sleep(500)
 			}
 		}
 
