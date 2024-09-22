@@ -139,7 +139,7 @@ export async function crawl(url, onFile, onCrawl, urls, origin) {
 
 		const html = await evaluate(
 			page,
-			() => document.documentElement.outerHTML,
+			() => '<!DOCTYPE html>\n' + document.documentElement.outerHTML,
 		)
 
 		onFile(url, html, false, true)
