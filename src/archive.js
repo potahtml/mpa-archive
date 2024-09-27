@@ -232,7 +232,7 @@ function onFile(url, body, binary, overWrite) {
 	const path = getPathFromURL(url, origin)
 
 	if (body === undefined) {
-		console.error('🛑 `undefined` body', url)
+		// console.error('🛑 `undefined` body', url)
 		return
 	}
 
@@ -299,8 +299,12 @@ async function onCrawl(url, error) {
 	stats.running--
 
 	if (error) {
-		console.error('🛑🍳 ', url)
-		console.error(error)
+		if (String(error).includes('Navigation timeout')) {
+			console.error('🛑🍳 ', 'Navigation timeout', url)
+		} else {
+			console.error('🛑🍳 ', url)
+			console.error(error)
+		}
 		urls.errors.push(url)
 
 		// try again via fetch on crawl error
