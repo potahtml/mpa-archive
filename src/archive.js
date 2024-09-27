@@ -112,14 +112,25 @@ function writeFile(file, body, binary) {
 
 // fetch sitemaps
 
+fetch(origin + '/urls.txt')
+	.then(response => response.text())
+	.then(text =>
+		text
+			.trim()
+			.split('\n')
+			.map(url => url.trim())
+			.map(url => origin + url)
+			.forEach(url => urls.links.push(url)),
+	)
+	.catch(() => {})
+
 fetch(origin + '/sitemap.txt')
 	.then(response => response.text())
 	.then(text =>
 		text
-			.replaceAll('"', '\n')
-			.replaceAll("'", '\n')
-			.replaceAll(' ', '\n')
+			.trim()
 			.split('\n')
+			.map(url => url.trim())
 			.filter(url => url.startsWith(root))
 			.forEach(url => urls.queue.push(url)),
 	)
