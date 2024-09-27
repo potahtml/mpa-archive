@@ -37,7 +37,9 @@ export function getPathFromURL(path, origin) {
 	path = path.replace(/\/+$/, '/index.html')
 
 	if (/\/[^/\.]+$/.test(path)) {
-		path = path + '.html'
+		if (!path.endsWith('_redirects')) {
+			path = path + '.html'
+		}
 	}
 
 	// remove slash
