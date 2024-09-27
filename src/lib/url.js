@@ -67,6 +67,10 @@ export function removeHash(link) {
 	}
 }
 
-export function shortURL(string = '') {
-	return string.length > 80 ? string.substr(0, 80) + '…' : string
+export function shortURL(s = '') {
+	return s.startsWith('http')
+		? s.replace(/#.*$/, '')
+		: s.length > 80
+			? s.slice(0, 80) + '…'
+			: s
 }
