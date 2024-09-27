@@ -137,10 +137,21 @@ export async function crawl(url, onFile, onCrawl, urls, origin) {
 
 		await focus(page)
 
-		const html = await evaluate(
-			page,
-			() => '<!DOCTYPE html>\n' + document.documentElement.outerHTML,
-		)
+		const html = await evaluate(page, () => {
+			let content = '<!DOCTYPE html>\n'
+
+			content +=
+				document.documentElement.outerHTML.match(/^<html[^>]*>/)[0] ||
+				''
+
+			content += document.documentElement.getHTML({
+				serializableShadowRoots: true,
+			})
+
+			content += '</html>'
+
+			return content
+		})
 
 		onFile(url, html, false, true)
 

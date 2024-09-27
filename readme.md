@@ -41,7 +41,8 @@ but seeded to the zip file name, so it remains the same.
 - It uses headless puppeteer
 - Crawls `http://example.net` with `cpu count / 2` threads
 - Progress is displayed in the console
-- Fetches `sitemap.txt` and `sitemap.xml` as a seed point
+- Fetches `urls.txt` , `sitemap.txt` and `sitemap.xml` as a seed point
+- It serializes Custom Elements too
 - Reports HTTP status codes different than 200, 304, 204, 206
 - Crawls on site urls only but will `fetch` external resources
 - Intercepts site resources and saves that too

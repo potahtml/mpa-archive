@@ -106,7 +106,10 @@ function writeFile(file, body, binary) {
 				: Buffer.from(body, 'utf8'),
 		)
 		*/
-		zip.addFile(file, body)
+		zip.addFile(
+			file,
+			body.byteLength ? Buffer.from(body, 'binary') : body,
+		)
 	}
 }
 
