@@ -391,13 +391,16 @@ export function sitemap() {
 		urls.queue.map(url => url.replace(/#.*/, '')),
 	).filter(url => url.startsWith(root))
 
-	writeFile('mpa/sitemap.txt', crawled.join('\n'))
+	writeFile(
+		'mpa/sitemap.txt',
+		crawled.join('\n').replaceAll(origin, ''),
+	)
 
 	writeFile(
 		'mpa/sitemap.xml',
 		`<?xml version="1.0" encoding="UTF-8"?>
 		<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-		  ${crawled.map(url => `<url><loc>${escapeHTML(url)}</loc></url>`).join('\n')}
+		  ${crawled.map(url => `<url><loc>${escapeHTML(url).replace(origin, '')}</loc></url>`).join('\n')}
 		</urlset>`,
 	)
 
