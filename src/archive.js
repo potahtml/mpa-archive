@@ -98,14 +98,6 @@ function writeFile(file, body, binary) {
 	body = typeof body === 'number' ? body.toString() : body
 
 	if (body !== undefined) {
-		/*
-		zip.addFile(
-			file,
-			binary
-				? Buffer.from(body, 'binary')
-				: Buffer.from(body, 'utf8'),
-		)
-		*/
 		zip.addFile(
 			file,
 			body.byteLength ? Buffer.from(body, 'binary') : body,
@@ -122,6 +114,7 @@ fetch(origin + '/urls.txt')
 			.trim()
 			.split('\n')
 			.map(url => url.trim())
+			.filter(url => url.startsWith('/'))
 			.map(url => origin + url)
 			.forEach(url => urls.links.push(url)),
 	)
