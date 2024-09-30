@@ -81,4 +81,3 @@ but seeded to the zip file name, so it remains the same.
 - it should maybe crawl the site by clicking the links instead of
   opening a full tab
 - crawl updates
-- should scroll the page for stuff with loading=lazy

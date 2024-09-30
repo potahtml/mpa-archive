@@ -183,6 +183,17 @@ export async function crawl(url, onFile, onCrawl, urls, origin) {
 			}
 		}
 
+		// focus loading=lazy
+		const lazyLoading = await page.$$('[loading="lazy"]')
+		for (const node of lazyLoading) {
+			await focus(page)
+			await node.hover().catch(noop)
+			await node.focus().catch(noop)
+			await sleep(200)
+		}
+
+		await sleep(500)
+
 		closeTab(page)
 
 		onCrawl(url, error)
