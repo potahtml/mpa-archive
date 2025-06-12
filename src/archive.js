@@ -218,6 +218,11 @@ function next() {
 		console.log(
 			'\nRun `mpa` to serve the crawled pages from the zips',
 		)
+		// when terminating, the browser sometimes errors when node exits
+		process.on('exit', () => {})
+		process.on('error', () => {})
+		process.on('unhandledRejection', (reason, p) => {})
+		process.on('uncaughtException', error => {})
 	}
 }
 
