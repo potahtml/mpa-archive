@@ -3,7 +3,7 @@
 import http from 'node:http'
 import fs from 'node:fs'
 
-import AdmZip from 'adm-zip'
+import { unzipSync, zipSync } from 'fflate'
 
 import { contentType } from './lib/contentType.js'
 import {
@@ -27,9 +27,8 @@ function serve(zipFile) {
 
 	zipFile = cwd + '/' + zipFile
 
-	let zip = new AdmZip(zipFile)
-
-	let entries = zip.getEntries()
+	/** @type {Record<string, Uint8Array>} */
+	let files = unzipSync(fs.readFileSync(zipFile))
 
 	const port = seededRandom(1025, 65534, domain)
 
@@ -73,12 +72,10 @@ function serve(zipFile) {
 		}
 
 		for (const file of tryFiles) {
-			const entry = entries.find(
-				zipEntry => zipEntry.entryName == file,
-			)
+			const entry = files[file]
 
 			if (entry) {
-				serve(file, path, entry.getData().slice(0))
+				serve(file, path, entry)
 				return
 			}
 		}
@@ -86,12 +83,12 @@ function serve(zipFile) {
 		// index Of
 		if (path === '' || path === '/' || path === '/index.html') {
 			let content = '<h1>index of ' + domain + '</h1><ul>'
-			for (let entry of entries) {
+			for (const name of Object.keys(files)) {
 				content +=
 					'<li><a href="/' +
-					entry.entryName +
+					name +
 					'">' +
-					entry.entryName +
+					name +
 					'</a></li>'
 			}
 			content += '</ul>'
@@ -115,19 +112,16 @@ function serve(zipFile) {
 					notfound(path)
 				} else {
 					const result = await response.arrayBuffer()
-					zip.addFile(path, Buffer.from(result.slice(0), 'binary'))
+					files[path] = new Uint8Array(result)
 
 					console.log(`✔  ${domain}/${path}`)
 
 					clearTimeout(timeouts[domain])
 					timeouts[domain] = setTimeout(() => {
-						zip.writeZip(zipFile)
-						// if we dont reopen it then it crashes with `getEntries`
-						zip = new AdmZip(zipFile)
-						entries = zip.getEntries()
+						fs.writeFileSync(zipFile, zipSync(files))
 					}, 5000)
 
-					serve(path, path, result.slice(0))
+					serve(path, path, files[path])
 				}
 			})
 			.catch(e => {

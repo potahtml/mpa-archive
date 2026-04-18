@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import AdmZip from 'adm-zip'
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
 import fs from 'node:fs'
 import os from 'node:os'
 
@@ -70,18 +70,19 @@ const stats = {
 
 // zip file
 
-let zip
+/** @type {Record<string, Uint8Array>} */
+let files = {}
 
 const zipFile = `${cwd}/${hostname}.zip`
 
-if (!fs.existsSync(zipFile)) {
-	zip = new AdmZip()
-	save()
-} else {
-	zip = new AdmZip(zipFile)
+if (fs.existsSync(zipFile)) {
 	try {
-		urls = JSON.parse(zip.readFile('mpa/state.json')) || urls
+		files = unzipSync(fs.readFileSync(zipFile))
+		urls =
+			JSON.parse(strFromU8(files['mpa/state.json'])) || urls
 	} catch (e) {}
+} else {
+	save()
 }
 
 urls.errors = []
@@ -90,18 +91,23 @@ urls.pending = []
 urls.httpErrors = []
 
 function save() {
-	zip.addFile('mpa/state.json', JSON.stringify(urls, null, 2))
-	zip.writeZip(zipFile)
+	files['mpa/state.json'] = strToU8(JSON.stringify(urls, null, 2))
+	fs.writeFileSync(zipFile, zipSync(files))
 }
 
 function writeFile(file, body, binary) {
 	body = typeof body === 'number' ? body.toString() : body
 
-	if (body !== undefined) {
-		zip.addFile(
-			file,
-			body.byteLength ? Buffer.from(body, 'binary') : body,
-		)
+	if (body === undefined) return
+
+	if (typeof body === 'string') {
+		files[file] = strToU8(body)
+	} else if (body instanceof Uint8Array) {
+		files[file] = body
+	} else if (body instanceof ArrayBuffer) {
+		files[file] = new Uint8Array(body)
+	} else {
+		files[file] = strToU8(String(body))
 	}
 }
 
